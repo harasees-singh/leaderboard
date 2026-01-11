@@ -44,4 +44,9 @@ jobs:
           docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
       - name: Image digest
-        run: echo "Image pushed with tag: ${{ env.IMAGE_TAG }}"
+        run: |
+          echo "✅ Image successfully pushed to ACR"
+          echo "Registry: ${{ env.AZURE_CONTAINER_REGISTRY }}"
+          echo "Image: ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}"
+          echo "Tags: ${{ env.IMAGE_TAG }}, latest"
+          echo "Full image reference: ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
