@@ -416,9 +416,166 @@ CREATE TABLE user_scores (
 
 ---
 
+## Visual Studio Subscription Considerations
+
+### Overview
+
+Since you have a Visual Studio subscription, you receive monthly Azure credits (typically $50-$150/month depending on subscription level). However, there are important limitations and considerations:
+
+**Key Points**:
+- ✅ Monthly Azure credits included (amount varies by subscription tier)
+- ⚠️ Spending limit enabled by default (services stop when credits are exhausted)
+- ⚠️ Some services may not be eligible for credit usage
+- ⚠️ Services are intended for **development and testing**, not production workloads
+- ⚠️ Cannot use pay-as-you-go billing while spending limit is active
+
+### Service Eligibility for Visual Studio Subscription Credits
+
+Most Azure services are eligible for credit usage, but with limitations:
+
+| Service | Eligible for Credits? | Notes |
+|---------|----------------------|-------|
+| Azure Cache for Redis | ✅ Yes (Basic/Standard tiers) | Premium tier may exceed credit limits |
+| Azure Spring Apps | ✅ Yes | Standard tier eligible |
+| Azure Event Hubs | ✅ Yes | Standard tier eligible |
+| Azure Database for PostgreSQL | ✅ Yes | Basic/General Purpose tiers eligible |
+| Azure Key Vault | ✅ Yes | Standard tier eligible |
+| Application Insights | ✅ Yes | Free tier (5GB/month) + credits for additional usage |
+| Azure Storage | ✅ Yes | Standard storage eligible |
+
+### Recommendations for Visual Studio Subscription
+
+#### Option 1: Development/Testing Setup (Recommended for VS Subscription)
+
+**Use smaller, credit-friendly tiers**:
+
+| Service | Recommended Tier | Monthly Cost | Notes |
+|---------|-----------------|--------------|-------|
+| Azure Cache for Redis | **Standard C1 (1GB)** or **Standard C2 (2.5GB)** | ~$15-55/month | Start small, scale if needed |
+| Azure Spring Apps | **Standard S0 (0.5 vCPU, 1GB)** or **S1 (1 vCPU, 2GB)** | ~$48-97/month | Sufficient for dev/test |
+| Azure Event Hubs | **Basic tier (1 TU)** | ~$10/month | Sufficient for development |
+| Azure Database for PostgreSQL | **Basic (1 vCore, 2GB)** or **General Purpose (2 vCore, 5GB)** | ~$25-100/month | Start with Basic for dev |
+| Azure Key Vault | **Standard** | ~$5/month | Minimal cost |
+| Application Insights | **Free tier** | $0-20/month | 5GB free, minimal usage after |
+| Azure Storage | **Standard LRS (10GB)** | ~$0.20/month | Minimal for dev |
+
+**Total Estimated Cost**: ~$103-$297/month (well within most VS subscription credit limits)
+
+**Advantages**:
+- Fits within Visual Studio subscription credits
+- Good for development and testing
+- No need to remove spending limit or provide credit card
+
+**Limitations**:
+- Not suitable for production workloads
+- Lower performance/resource limits
+- May need to upgrade for production
+
+#### Option 2: Alternative Architecture (If Services Exceed Credits)
+
+If you need more resources or want to stay within credits, consider:
+
+1. **Azure App Service instead of Azure Spring Apps**:
+   - Lower cost for Java applications
+   - Basic/Standard tiers start at ~$13/month
+   - Still fully managed
+   - ⚠️ Less Spring Boot-specific features
+
+2. **Azure Container Instances (ACI) + Azure Container Apps**:
+   - Very cost-effective for containerized apps
+   - Pay only for usage
+   - Good for development/testing
+
+3. **Azure Functions (Serverless)**:
+   - Pay-per-execution model
+   - Very cost-effective for low-medium traffic
+   - ⚠️ Requires significant code refactoring
+
+4. **Self-hosted Redis on Azure VM**:
+   - Lower cost (~$30-50/month for small VM)
+   - ⚠️ You manage it (not recommended)
+
+### Important Considerations
+
+1. **Spending Limit**:
+   - Visual Studio subscriptions have a spending limit enabled
+   - Services will **stop automatically** when credits are exhausted
+   - To use pay-as-you-go billing, you must:
+     - Remove the spending limit (requires credit card)
+     - This converts subscription to pay-as-you-go model
+
+2. **Production Workloads**:
+   - Visual Studio subscription credits are **intended for dev/test only**
+   - For production, consider:
+     - Enterprise Agreement (if available)
+     - Pay-as-you-go subscription
+     - Remove spending limit and use credits as discount
+
+3. **Credit Usage Monitoring**:
+   - Monitor credit usage in Azure Portal
+   - Set up alerts for credit usage thresholds
+   - Budget alerts to track spending
+
+### Recommended Approach
+
+**For Development/Testing (Current Situation)**:
+1. Use the smaller tiers listed in Option 1
+2. Start with Basic/Standard tiers for all services
+3. Monitor credit usage monthly
+4. Scale up only if needed and credits allow
+
+**For Production (Future)**:
+1. Consider upgrading to Pay-As-You-Go subscription
+2. Or use Enterprise Agreement if available
+3. Use Reserved Instances for cost savings (30-40% discount)
+4. Implement auto-scaling to optimize costs
+
+### Cost Optimization Tips
+
+1. **Use Azure Free Tier Services**:
+   - Application Insights: 5GB free per month
+   - Azure Storage: 5GB free per month (first 12 months)
+   - Azure Functions: 1M free requests per month
+
+2. **Right-size Resources**:
+   - Start small and scale as needed
+   - Monitor usage and adjust
+   - Use Azure Cost Management to identify waste
+
+3. **Development vs Production**:
+   - Use smaller tiers for development
+   - Shut down dev environments when not in use
+   - Use auto-shutdown schedules
+
+4. **Consider Azure Dev/Test Pricing**:
+   - If you have Enterprise Agreement, use Dev/Test pricing
+   - Significant discounts (up to 50% off)
+   - Requires Visual Studio subscription per user
+
+---
+
 ## Cost Estimation
 
-### Monthly Cost Breakdown (Development/Staging)
+### Monthly Cost Breakdown with Visual Studio Subscription Credits (Development/Testing)
+
+**Recommended Setup for VS Subscription**:
+
+| Service | Tier/Size | Estimated Monthly Cost |
+|---------|-----------|----------------------|
+| Azure Cache for Redis | Standard C1 (1GB) | $15 |
+| Azure Spring Apps | Standard S0 (0.5 vCPU, 1GB) | $48 |
+| Azure Event Hubs | Basic (1 TU) | $10 |
+| Azure Database for PostgreSQL | Basic (1 vCore, 2GB) | $25 |
+| Azure Key Vault | Standard | $5 |
+| Application Insights | Free tier (5GB) | $0-10 |
+| Azure Storage | Standard LRS (10GB) | $0.20 |
+| **Total (VS Subscription Friendly)** | | **~$103-113/month** |
+
+✅ **Fits within Visual Studio subscription credits** ($50-$150/month typical)
+
+### Monthly Cost Breakdown (Development/Staging - Pay-As-You-Go)
+
+**Note**: For Visual Studio subscription users, see the "Visual Studio Subscription Considerations" section above for credit-friendly options.
 
 | Service | Tier/Size | Estimated Monthly Cost |
 |---------|-----------|----------------------|
@@ -456,8 +613,8 @@ CREATE TABLE user_scores (
 
 ### Phase 1: Foundation Setup (Week 1-2)
 1. ✅ Create Azure subscription and resource group
-2. ✅ Set up Virtual Network and subnets
-3. ✅ Deploy Azure Cache for Redis (Premium)
+2. ✅ Set up Virtual Network and subnets (optional for dev/test)
+3. ✅ Deploy Azure Cache for Redis (Standard C1/C2 for VS Subscription, Premium for Pay-As-You-Go)
 4. ✅ Deploy Azure Key Vault
 5. ✅ Configure secrets in Key Vault
 

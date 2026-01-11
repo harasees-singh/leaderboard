@@ -4,20 +4,32 @@ server:
 spring:
   application:
     name: leaderboard-platform
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/leaderboard_db
+    username: leaderboard_user
+    password: leaderboard_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
 
 redis:
   host: localhost
   port: 6379
   timeout: 2000
 
-leaderboard:
-  storage:
-    directory: ./data
-    leaderboards: ./data/leaderboards
-    userScores: ./data/user-scores
-
 logging:
   level:
     com.leaderboard.platform: INFO
     org.springframework: WARN
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
