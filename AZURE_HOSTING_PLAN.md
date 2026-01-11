@@ -14,8 +14,8 @@ This document outlines a comprehensive plan for hosting the Leaderboard Platform
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌──────────────────┐      ┌──────────────────┐               │
-│  │ Azure Spring Apps│      │  Application     │               │
-│  │   (App Service)  │◄─────│  Gateway / ALB   │               │
+│  │ Azure Container │      │  Application     │               │
+│  │      Apps        │◄─────│  Gateway / ALB   │               │
 │  │                  │      │  (Optional)      │               │
 │  └────────┬─────────┘      └──────────────────┘               │
 │           │                                                    │
@@ -47,7 +47,7 @@ This document outlines a comprehensive plan for hosting the Leaderboard Platform
 │  │  - Azure Key Vault (Secrets)                        │      │
 │  │  - Application Insights (Monitoring)                │      │
 │  │  - Azure Storage (Backups/Artifacts)                │      │
-│  │  - Azure Container Registry (Optional)              │      │
+│  │  - Azure Container Registry (Required)              │      │
 │  └─────────────────────────────────────────────────────┘      │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -111,72 +111,84 @@ spring:
 
 ---
 
-### 2. Azure Spring Apps ✅ **RECOMMENDED**
+### 2. Azure Container Apps ✅ **RECOMMENDED**
 
-**Purpose**: Host and manage the Spring Boot application (Java 17, Spring Boot 3.2.0)
+**Purpose**: Host and manage the Spring Boot application as a containerized workload (Java 17, Spring Boot 3.2.0)
 
 **Service Details**:
-- **Service**: Azure Spring Apps (formerly Azure Spring Cloud)
-- **Tier Options**:
-  - **Basic/Standard**: Standard managed service
-  - **Enterprise**: Enhanced features with Spring Cloud components
+- **Service**: Azure Container Apps
+- **Deployment Model**: Container-based (Docker)
+- **Registry**: Azure Container Registry (ACR) for image storage
 
-**Recommendation**: **Standard tier**
-- Fully managed Spring Boot runtime
-- Auto-scaling based on metrics
-- Built-in service discovery and load balancing
+**Recommendation**: **Consumption Plan** (serverless) or **Dedicated Plan** (for production)
+- Fully managed container orchestration
+- Auto-scaling from 0 to N instances based on metrics
+- Built-in load balancing and ingress
 - Integrated with Azure services (Redis, databases, Event Hubs)
-- Zero-downtime deployments with blue-green deployment
+- Zero-downtime deployments with revision management
+- Pay-per-use pricing model (Consumption plan)
 
 **Configuration Requirements**:
-- Runtime: Java 17
-- Application type: Standard Spring Boot app
-- Resource allocation: Start with 2 vCPU, 4GB RAM per instance
-- Scaling: Auto-scale based on CPU/memory metrics
-- Health checks: Configure actuator endpoints
+- Container Image: Docker image stored in Azure Container Registry
+- Runtime: Java 17 (via JRE base image)
+- Resource allocation: Start with 0.5-1.0 CPU, 1-2GB RAM per instance
+- Scaling: Auto-scale based on HTTP requests, CPU, or memory metrics
+- Health checks: Configure HTTP health probe endpoint
+- Ingress: Enable external ingress on port 8080
 
-**Application Configuration**:
+**Container Configuration**:
 ```yaml
-# Azure Spring Apps specific settings
-spring:
-  application:
-    name: leaderboard-platform
-  profiles:
-    active: azure
-
-server:
-  port: 8080
-
-# Health checks
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
+# Container Apps Environment Variables
+SPRING_DATASOURCE_URL: jdbc:postgresql://<postgres-host>:5432/leaderboard_db
+SPRING_DATASOURCE_USERNAME: ${POSTGRES_USERNAME}
+SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+REDIS_HOST: <redis-cache-name>.redis.cache.windows.net
+REDIS_PORT: 6380
+REDIS_SSL: true
+REDIS_PASSWORD: ${REDIS_PASSWORD}
+SERVER_PORT: 8080
 ```
 
-**Feasibility**: ✅ **Excellent**
-- Native Spring Boot support
-- No code changes required
-- Automatic integration with Azure services
-- Built-in monitoring and logging
-- Supports Maven builds directly
+**GitHub Actions CI/CD Pipeline**:
+- Automated build and push to ACR on main branch updates
+- Workflow: `.github/workflows/azure-container-registry.yml`
+- Builds Docker image from Dockerfile
+- Tags images with commit SHA and `latest`
+- Pushes to Azure Container Registry
 
-**Estimated Cost**:
-- Standard S0 (0.5 vCPU, 1GB RAM): ~$0.067/hour (~$48/month)
-- Standard S1 (1 vCPU, 2GB RAM): ~$0.134/hour (~$97/month)
-- Standard S2 (2 vCPU, 4GB RAM): ~$0.268/hour (~$193/month)
-- Additional instances for scaling: Same pricing
+**Feasibility**: ✅ **Excellent**
+- Container-native approach (Docker)
+- No code changes required (standard Spring Boot app)
+- Automatic integration with Azure services via environment variables
+- Built-in monitoring and logging via Application Insights
+- Supports any containerized application
+- More flexible than platform-specific services
+
+**Estimated Cost** (Consumption Plan):
+- CPU: $0.000012/vCPU-second (~$0.043/vCPU-hour)
+- Memory: $0.0000015/GB-second (~$0.0054/GB-hour)
+- Example: 1 vCPU, 2GB RAM, 24/7 = ~$62/month
+- Scales to zero when not in use (cost savings)
+
+**Estimated Cost** (Dedicated Plan):
+- Fixed pricing per workload profile
+- Better for predictable workloads
+- Starts at ~$0.000012/vCPU-second + $0.0000015/GB-second
 
 **Deployment Steps**:
-1. Create Azure Spring Apps instance
-2. Configure build/deploy pipeline (Azure DevOps, GitHub Actions)
-3. Create app within Spring Apps service
-4. Deploy JAR file or use Maven/Gradle plugin
-5. Configure environment variables and bindings
+1. Create Azure Container Registry (ACR)
+2. Create Container Apps Environment
+3. Configure GitHub Actions workflow secrets:
+   - `AZURE_CONTAINER_REGISTRY`: ACR login server URL
+   - `AZURE_CONTAINER_REGISTRY_USERNAME`: ACR admin username
+   - `AZURE_CONTAINER_REGISTRY_PASSWORD`: ACR admin password
+4. Push to main branch triggers automatic build and push to ACR
+5. Create Container App and configure:
+   - Image: `{acr-name}.azurecr.io/leaderboard-platform:latest`
+   - Environment variables from Key Vault or direct configuration
+   - Scaling rules (min: 1, max: 10 instances)
+   - Ingress: External, port 8080
+6. Configure revision management for zero-downtime deployments
 
 ---
 
@@ -313,7 +325,7 @@ CREATE TABLE user_scores (
 - Certificates
 
 **Feasibility**: ✅ **Easy Integration**
-- Azure Spring Apps has built-in Key Vault integration
+- Azure Container Apps has built-in Key Vault integration via managed identity
 - Access via Azure SDK or Spring Cloud Azure
 - No code changes required (configuration only)
 
@@ -333,7 +345,7 @@ CREATE TABLE user_scores (
 - Log aggregation
 
 **Feasibility**: ✅ **Easy Integration**
-- Built-in support in Azure Spring Apps
+- Built-in support in Azure Container Apps via Application Insights integration
 - Just add dependency and configuration
 - Automatic instrumentation
 
@@ -363,15 +375,29 @@ CREATE TABLE user_scores (
 
 ---
 
-### 8. Azure Container Registry (ACR) ✅ **OPTIONAL**
+### 8. Azure Container Registry (ACR) ✅ **REQUIRED**
 
-**Purpose**: Store Docker images if containerizing the application
+**Purpose**: Store Docker images for Container Apps deployment
 
-**Alternative**: Azure Spring Apps supports direct JAR deployment (recommended)
+**Service Details**:
+- **Service**: Azure Container Registry
+- **Tier**: Basic (for dev/test) or Standard (for production)
+- **Features**: Private Docker registry, geo-replication, security scanning
 
-**Feasibility**: ✅ **Not Required Initially**
-- Azure Spring Apps can deploy JAR files directly
-- Use ACR only if containerizing later
+**Feasibility**: ✅ **Required for Container Apps**
+- Container Apps requires images from a container registry
+- ACR provides secure, private image storage
+- Integrated with GitHub Actions for CI/CD
+- Automatic image builds on push to main branch
+
+**Estimated Cost**:
+- Basic: ~$5/month (10GB storage, 1GB network egress/day)
+- Standard: ~$20/month (100GB storage, 10GB network egress/day)
+
+**Configuration**:
+- Enable admin user for GitHub Actions authentication
+- Configure network access (public or private endpoints)
+- Set up retention policies for old images
 
 ---
 
@@ -387,7 +413,7 @@ CREATE TABLE user_scores (
 │                                         │
 │  ┌──────────────────────────────────┐  │
 │  │   Subnet: apps-subnet            │  │
-│  │   - Azure Spring Apps            │  │
+│  │   - Azure Container Apps         │  │
 │  └──────────────────────────────────┘  │
 │                                         │
 │  ┌──────────────────────────────────┐  │
@@ -436,7 +462,7 @@ Most Azure services are eligible for credit usage, but with limitations:
 | Service | Eligible for Credits? | Notes |
 |---------|----------------------|-------|
 | Azure Cache for Redis | ✅ Yes (Basic/Standard tiers) | Premium tier may exceed credit limits |
-| Azure Spring Apps | ✅ Yes | Standard tier eligible |
+| Azure Container Apps | ✅ Yes | Consumption/Dedicated plans eligible |
 | Azure Event Hubs | ✅ Yes | Standard tier eligible |
 | Azure Database for PostgreSQL | ✅ Yes | Basic/General Purpose tiers eligible |
 | Azure Key Vault | ✅ Yes | Standard tier eligible |
@@ -452,7 +478,7 @@ Most Azure services are eligible for credit usage, but with limitations:
 | Service | Recommended Tier | Monthly Cost | Notes |
 |---------|-----------------|--------------|-------|
 | Azure Cache for Redis | **Standard C1 (1GB)** or **Standard C2 (2.5GB)** | ~$15-55/month | Start small, scale if needed |
-| Azure Spring Apps | **Standard S0 (0.5 vCPU, 1GB)** or **S1 (1 vCPU, 2GB)** | ~$48-97/month | Sufficient for dev/test |
+| Azure Container Apps | **Consumption Plan (0.5-1 vCPU, 1-2GB)** | ~$30-60/month | Sufficient for dev/test, scales to zero |
 | Azure Event Hubs | **Basic tier (1 TU)** | ~$10/month | Sufficient for development |
 | Azure Database for PostgreSQL | **Basic (1 vCore, 2GB)** or **General Purpose (2 vCore, 5GB)** | ~$25-100/month | Start with Basic for dev |
 | Azure Key Vault | **Standard** | ~$5/month | Minimal cost |
@@ -475,11 +501,11 @@ Most Azure services are eligible for credit usage, but with limitations:
 
 If you need more resources or want to stay within credits, consider:
 
-1. **Azure App Service instead of Azure Spring Apps**:
-   - Lower cost for Java applications
-   - Basic/Standard tiers start at ~$13/month
-   - Still fully managed
-   - ⚠️ Less Spring Boot-specific features
+1. **Azure Container Apps (Recommended)**:
+   - Cost-effective container hosting
+   - Consumption plan scales to zero when not in use
+   - Pay only for actual usage
+   - Fully managed container orchestration
 
 2. **Azure Container Instances (ACI) + Azure Container Apps**:
    - Very cost-effective for containerized apps
@@ -563,7 +589,8 @@ If you need more resources or want to stay within credits, consider:
 | Service | Tier/Size | Estimated Monthly Cost |
 |---------|-----------|----------------------|
 | Azure Cache for Redis | Standard C1 (1GB) | $15 |
-| Azure Spring Apps | Standard S0 (0.5 vCPU, 1GB) | $48 |
+| Azure Container Apps | Consumption Plan (0.5 vCPU, 1GB) | $30 |
+| Azure Container Registry | Basic (10GB) | $5 |
 | Azure Event Hubs | Basic (1 TU) | $10 |
 | Azure Database for PostgreSQL | Basic (1 vCore, 2GB) | $25 |
 | Azure Key Vault | Standard | $5 |
@@ -579,7 +606,8 @@ If you need more resources or want to stay within credits, consider:
 
 | Service | Tier/Size | Estimated Monthly Cost |
 |---------|-----------|----------------------|
-| Azure Spring Apps | Standard S1 (1 vCPU, 2GB) | $97 |
+| Azure Container Apps | Consumption Plan (1 vCPU, 2GB) | $60 |
+| Azure Container Registry | Standard (100GB) | $20 |
 | Azure Cache for Redis | Premium P1 (6GB) | $165 |
 | Azure Event Hubs | Standard (2 TU) | $58 |
 | Azure Database for PostgreSQL | General Purpose (2 vCore, 5GB) | $100 |
@@ -592,7 +620,8 @@ If you need more resources or want to stay within credits, consider:
 
 | Service | Tier/Size | Estimated Monthly Cost |
 |---------|-----------|----------------------|
-| Azure Spring Apps | Standard S2 (2 vCPU, 4GB) × 2 instances | $386 |
+| Azure Container Apps | Dedicated Plan (2 vCPU, 4GB) × 2 instances | $300 |
+| Azure Container Registry | Standard (100GB) | $20 |
 | Azure Cache for Redis | Premium P2 (13GB) | $330 |
 | Azure Event Hubs | Standard (4 TU) | $116 |
 | Azure Database for PostgreSQL | General Purpose (4 vCore, 10GB) | $200 |
@@ -619,11 +648,13 @@ If you need more resources or want to stay within credits, consider:
 5. ✅ Configure secrets in Key Vault
 
 ### Phase 2: Application Deployment (Week 2-3)
-1. ✅ Create Azure Spring Apps instance
-2. ✅ Configure build/deployment pipeline
-3. ✅ Deploy application (with Redis connection)
-4. ✅ Test basic functionality
-5. ✅ Set up Application Insights
+1. ✅ Create Azure Container Registry (ACR)
+2. ✅ Create Azure Container Apps Environment
+3. ✅ Configure GitHub Actions workflow for CI/CD
+4. ✅ Build and push Docker image to ACR
+5. ✅ Create Container App and deploy application (with Redis connection)
+6. ✅ Test basic functionality
+7. ✅ Set up Application Insights
 
 ### Phase 3: Event Streaming (Week 3-4)
 1. ✅ Create Azure Event Hubs namespace
@@ -712,7 +743,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
-# Azure Spring Apps Configuration
+# Azure Container Apps Configuration
 management:
   endpoints:
     web:
@@ -721,10 +752,14 @@ management:
   endpoint:
     health:
       show-details: always
+      probes:
+        enabled: true
   metrics:
     export:
       azure-monitor:
         enabled: true
+server:
+  port: 8080
 
 logging:
   level:
@@ -763,9 +798,9 @@ logging:
 </dependency>
 ```
 
-### 3. Environment Variables in Azure Spring Apps
+### 3. Environment Variables in Azure Container Apps
 
-Set these via Azure Portal or CLI:
+Set these via Azure Portal, CLI, or Container Apps configuration:
 
 ```bash
 REDIS_HOST=<redis-name>.redis.cache.windows.net
@@ -783,10 +818,11 @@ KAFKA_BOOTSTRAP_SERVERS=<event-hubs-namespace>.servicebus.windows.net:9093
 
 ### High Availability Configuration
 
-1. **Azure Spring Apps**:
-   - Deploy minimum 2 instances
-   - Configure auto-scaling (2-5 instances)
-   - Use availability zones (if supported in region)
+1. **Azure Container Apps**:
+   - Deploy minimum 2 replicas
+   - Configure auto-scaling (min: 2, max: 10 replicas)
+   - Use revision management for zero-downtime deployments
+   - Configure health probes for automatic recovery
 
 2. **Azure Cache for Redis**:
    - Premium tier with replication
@@ -851,9 +887,10 @@ Configure alerts for:
 ### Horizontal Scaling
 
 1. **Application Tier**:
-   - Azure Spring Apps auto-scales based on CPU/memory
-   - Scale rules: Scale out at 70% CPU, scale in at 30% CPU
-   - Minimum: 2 instances, Maximum: 10 instances
+   - Azure Container Apps auto-scales based on HTTP requests, CPU, or memory
+   - Scale rules: Scale out at 70% CPU or >100 concurrent requests, scale in at 30% CPU
+   - Minimum: 1 replica, Maximum: 10 replicas (configurable)
+   - Consumption plan scales to zero when not in use
 
 2. **Redis**:
    - Upgrade to larger tier or enable clustering (Premium)
@@ -959,7 +996,8 @@ Configure alerts for:
 
 ### ✅ **Must Have (Phase 1-2)**
 1. **Azure Cache for Redis** (Premium) - Core functionality
-2. **Azure Spring Apps** (Standard) - Application hosting
+2. **Azure Container Apps** (Consumption/Dedicated) - Application hosting
+3. **Azure Container Registry** (Basic/Standard) - Container image storage
 3. **Azure Event Hubs** (Standard) - Event streaming
 
 ### ⚠️ **Required for Production (Phase 4)**
@@ -992,7 +1030,8 @@ Configure alerts for:
 ## References
 
 - [Azure Cache for Redis Documentation](https://docs.microsoft.com/azure/azure-cache-for-redis/)
-- [Azure Spring Apps Documentation](https://docs.microsoft.com/azure/spring-apps/)
+- [Azure Container Apps Documentation](https://docs.microsoft.com/azure/container-apps/)
+- [Azure Container Registry Documentation](https://docs.microsoft.com/azure/container-registry/)
 - [Azure Event Hubs Documentation](https://docs.microsoft.com/azure/event-hubs/)
 - [Azure Database for PostgreSQL Documentation](https://docs.microsoft.com/azure/postgresql/)
 - [Azure Event Hubs for Apache Kafka](https://docs.microsoft.com/azure/event-hubs/azure-event-hubs-kafka-overview)
