@@ -1,0 +1,21 @@
+need fixing of some things
+
+in FR1, if 2 users have the same score they need to be ranked based on timestamp, earliest timestamp gets the higher rank. 
+
+in FR2, we need to take in UUID and not leaderboardId, leaderboardId is a generated id and it need not be exposed to clients. you can take UUID in request body of the create leaderboard api. 
+
+remove FR5
+
+in NFRs 
+
+can you justify these numbers for latency, throughput and response time ?
+
+justify scalability and availability as well
+
+also create data flow diagrams instead of just showing flow thorugh arrows
+
+Dont need architecture components
+remove additional considerations, keep failure scenarios and mitigation for now
+remove future enchancements and conclusion
+
+

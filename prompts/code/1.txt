@@ -1,0 +1,20 @@
+go through the documentation and implement the leaderboard platform in java using maven as the build tool. 
+
+Here is the scope of features that you need to build
+
+1. implement the update score api
+2. implement the Top N retrieval api
+
+code an api layer which receives request, a service layer which houses the business logic and a repository layer which interacts with persistent storage (you can use json files instead of an actual db) and redis (use a docker container for redis)
+
+make sure code is clean, modular, extensible, maintainable and testable. 
+
+write unit test cases to make sure all core features are working
+you can use in memory mocks for redis and persistent storage for unit tests
+
+make sure relevant error messages are propagated. Consider all corner cases and failure scenrios and include relevant defensive checks wherever applicable.
+for retrying writes to redis you can write to a queue to periodically retry.
+
+maintain an excellent directory structure
+
+

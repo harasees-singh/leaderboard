@@ -1,0 +1,1 @@
+refactor bigger methods, each individual method should do 1 small thing, it should not span 20 lines

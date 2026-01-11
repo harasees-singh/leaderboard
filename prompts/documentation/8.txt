@@ -1,0 +1,1 @@
+can we avoid using separate hash map for timestamps, can't we do a sort order in redis where we first check score and then check timestamp ?

@@ -1,0 +1,5 @@
+push NFRs at the end
+
+remove data flow paths, not needed as we have data flow diagrams
+
+remove all info around composite key

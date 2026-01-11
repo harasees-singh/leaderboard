@@ -1,0 +1,9 @@
+{
+  "userId" : "qsy",
+  "leaderboardId" : "a293e780-a415-4f38-92e8-1e09997fbdd7",
+  "score" : 15.0,
+  "timestamp" : "2025-12-13T11:43:49.017Z",
+  "rank" : null
+}
+
+rank should not be part of persistent storage

@@ -1,0 +1,5 @@
+Instant timestamp = (existingScore != null && existingScore.getTimestamp() != null)
+                ? existingScore.getTimestamp() 
+                : now;
+            
+we need to store current timestamp each time we update the score

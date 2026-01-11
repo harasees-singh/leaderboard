@@ -1,0 +1,1 @@
+summarize schema transformation, go with the schema registry approach only

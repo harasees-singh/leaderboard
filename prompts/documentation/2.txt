@@ -1,0 +1,5 @@
+updating the persistent storage and redis needs to be an atomic operation. Suggest other methods like Repair flows, which can run periodically for example and make sure redis is in sync with our source of truth i.e. persistent storage. 
+
+Discuss tradeoffs for both approaches. Capture this information in the same markdown file.
+
+Our goal is to make sure both redis and persistent storage are in sync.

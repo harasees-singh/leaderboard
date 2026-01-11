@@ -1,0 +1,1 @@
+add details around how you would transform incoming events of different schemas to one single unified schema to be consumed by leaderboard service, update README.md with examples

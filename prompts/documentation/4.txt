@@ -1,0 +1,7 @@
+too much jargon, focus on core features, remove unnecessary detail around Data consistency model, conflict resolution
+summarize the tradeoffs and recommended strategy, only include necessary information. 
+
+
+Dont rely on client for previous rank. 
+
+remove redis commands, summarize

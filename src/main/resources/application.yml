@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: leaderboard-platform
+
+redis:
+  host: localhost
+  port: 6379
+  timeout: 2000
+
+leaderboard:
+  storage:
+    directory: ./data
+    leaderboards: ./data/leaderboards
+    userScores: ./data/user-scores
+
+logging:
+  level:
+    com.leaderboard.platform: INFO
+    org.springframework: WARN
+

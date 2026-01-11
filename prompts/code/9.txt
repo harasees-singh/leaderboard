@@ -1,0 +1,3 @@
+LeaderboardServiceTest.testGetTopN_InvalidLimit:207 Unexpected exception type thrown, expected: <com.leaderboard.platform.exception.InvalidRequestException> but was: <com.leaderboard.platform.exception.LeaderboardNotFoundException>
+
+1 test is failing please fix

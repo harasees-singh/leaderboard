@@ -1,0 +1,2 @@
+add json request and response bodies wherever applicable
+add the 2 phase commit approach back (give a summary and discuss tradeoffs)

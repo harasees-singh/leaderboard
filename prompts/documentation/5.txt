@@ -1,0 +1,2 @@
+avoid composite key,
+make the entire doc shorter and easier to consume
