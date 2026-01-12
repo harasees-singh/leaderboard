@@ -1,20 +1,23 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
   application:
     name: leaderboard-platform
   
   datasource:
-    url: jdbc:postgresql://localhost:5432/leaderboard_db
-    username: leaderboard_user
-    password: leaderboard_password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/leaderboard_db}
+    username: ${SPRING_DATASOURCE_USERNAME:leaderboard_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:leaderboard_password}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${SPRING_DATASOURCE_MAX_POOL_SIZE:10}
+      minimum-idle: ${SPRING_DATASOURCE_MIN_IDLE:5}
   
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: false
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -22,9 +25,11 @@ spring:
     open-in-view: false
 
 redis:
-  host: localhost
-  port: 6379
-  timeout: 2000
+  host: ${REDIS_HOST:localhost}
+  port: ${REDIS_PORT:6379}
+  password: ${REDIS_PASSWORD:}
+  ssl: ${REDIS_SSL:false}
+  timeout: ${REDIS_TIMEOUT:2000}
 
 logging:
   level:

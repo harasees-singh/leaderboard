@@ -5,8 +5,10 @@ import com.leaderboard.platform.repository.RedisRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.resps.Tuple;
 
 import jakarta.annotation.PostConstruct;
@@ -32,6 +34,12 @@ public class JedisRedisRepository implements RedisRepository {
     @Value("${redis.port:6379}")
     private int redisPort;
     
+    @Value("${redis.password:}")
+    private String redisPassword;
+    
+    @Value("${redis.ssl:false}")
+    private boolean redisSsl;
+    
     @Value("${redis.timeout:2000}")
     private int timeout;
     
@@ -45,15 +53,34 @@ public class JedisRedisRepository implements RedisRepository {
             poolConfig.setTestOnBorrow(true);
             poolConfig.setTestOnReturn(true);
             
-            jedisPool = new JedisPool(poolConfig, redisHost, redisPort, timeout);
+            HostAndPort hostAndPort = new HostAndPort(redisHost, redisPort);
+            
+            // Configure client with SSL and password if needed
+            DefaultJedisClientConfig.Builder clientConfigBuilder = DefaultJedisClientConfig.builder()
+                .connectionTimeoutMillis(timeout)
+                .socketTimeoutMillis(timeout);
+            
+            if (redisSsl) {
+                clientConfigBuilder.ssl(true);
+            }
+            
+            if (redisPassword != null && !redisPassword.isEmpty()) {
+                clientConfigBuilder.password(redisPassword);
+            }
+            
+            DefaultJedisClientConfig clientConfig = clientConfigBuilder.build();
+            jedisPool = new JedisPool(poolConfig, hostAndPort, clientConfig);
             
             // Test connection
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.ping();
                 available = true;
+                System.out.println("Successfully connected to Redis at " + redisHost + ":" + redisPort + 
+                    (redisSsl ? " (SSL enabled)" : ""));
             }
         } catch (Exception e) {
             System.err.println("Failed to initialize Redis connection: " + e.getMessage());
+            e.printStackTrace();
             available = false;
         }
     }
