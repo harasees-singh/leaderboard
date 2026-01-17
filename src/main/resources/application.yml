@@ -21,6 +21,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        # Fallback dialect if connection fails during initialization
+        # Hibernate will auto-detect from JDBC URL when connection succeeds
+        dialect: ${SPRING_JPA_HIBERNATE_DIALECT:org.hibernate.dialect.PostgreSQLDialect}
     open-in-view: false
 
 redis:
